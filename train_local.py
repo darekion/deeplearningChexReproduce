@@ -4,15 +4,15 @@ import model_local as ML
 import sys
 
 
-method = sys.argv[1]
-thresh = float(sys.argv[2])
-mean = bool(int(sys.argv[3]))
+method = 'Complex'
+thresh = 0.5
+mean = False
 
 heatmap_methods = [method, thresh,mean]
 
 print('Running local branch with following parameters', heatmap_methods)
 
-base_path = '/zhome/45/0/97860/Documents/reproduce-chexnet-master/results_local2/'
+base_path = 'results_local/'
 
 
 state_dict_path = base_path + 'state_dict_t' + str(thresh) + '_m=' + str(mean)

@@ -56,10 +56,10 @@ def checkpoint(model, best_loss, epoch, LR):
         'LR': LR
     }
 
-    torch.save(state, '/zhome/45/0/97860/Documents/reproduce-chexnet-master/Results/checkpoint')
+    torch.save(state, 'results_global/checkpoint')
 
     state_dict = model.state_dict()
-    torch.save(state_dict,'/zhome/45/0/97860/Documents/reproduce-chexnet-master/Results/state_dict')
+    torch.save(state_dict,'results_global/state_dict')
 
 def train_model(
         model,
@@ -181,7 +181,7 @@ def train_model(
         time_elapsed // 60, time_elapsed % 60))
 
     # load best model weights to return
-    checkpoint_best = torch.load('/zhome/45/0/97860/Documents/reproduce-chexnet-master/Results/checkpoint')
+    checkpoint_best = torch.load('results_global/checkpoint')
     model = checkpoint_best['model']
 
     return model, best_epoch

@@ -31,7 +31,7 @@ paths = [state_dict_path, model_path, aucs_path, preds_path]
 PATH_TO_IMAGES = "/work3/s144137/DL/extracted_images/images"
 WEIGHT_DECAY = 1e-4
 LEARNING_RATE = 0.01
-state_dict = '/zhome/45/0/97860/Documents/reproduce-chexnet-master/Results/state_dict'
+state_dict = 'results_global/state_dict'
 
 
 preds, aucs, model = ML.train_cnn(PATH_TO_IMAGES, LEARNING_RATE, WEIGHT_DECAY,state_dict,heatmap_methods, paths)

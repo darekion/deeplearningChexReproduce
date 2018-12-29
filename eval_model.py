@@ -106,6 +106,6 @@ def make_pred_multilabel(data_transforms, model, PATH_TO_IMAGES):
             print("can't calculate auc for " + str(column))
         auc_df = auc_df.append(thisrow, ignore_index=True)
 
-    pred_df.to_csv("/zhome/45/0/97860/Documents/reproduce-chexnet-master/Results/preds.csv", index=False)
-    auc_df.to_csv("/zhome/45/0/97860/Documents/reproduce-chexnet-master/Results/aucs.csv", index=False)
+    pred_df.to_csv("results_global/preds.csv", index=False)
+    auc_df.to_csv("results_global/aucs.csv", index=False)
     return pred_df, auc_df

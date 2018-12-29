@@ -1,6 +1,6 @@
 # deeplearningChexReproduce
 
-To retrain the model first run train_global.py, then train_local.py and lastly train_concat.py
+To retrain the model first run train_global.py, then train_local.py and lastly train_concat.py. Please ensure that you are running the scripts in the correct directory. 
 
 For retraing the full uncompressed images must be downloaded from https://nihcc.app.box.com/v/ChestXray-NIHCC and paths needs to be updated in the training, model, evaluating and dataset files in order to successfully run the code and save the states. 
 

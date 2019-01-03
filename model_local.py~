@@ -17,13 +17,14 @@ import torchvision
 from torchvision import datasets, models, transforms
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
-import torch.nn.functional as F
+
 # image imports
 #from skimage import io, transform
 #from PIL import Image
 
 # general imports
 import os
+from os.path import join
 import time
 from shutil import copyfile
 from shutil import rmtree
@@ -34,8 +35,10 @@ import numpy as np
 import csv
 
 import cxr_dataset as CXR
-import eval_model_concat as E
+import eval_model_local as E
 import cropping as C
+
+
 
 use_gpu = torch.cuda.is_available()
 gpu_count = torch.cuda.device_count()
@@ -65,9 +68,10 @@ def checkpoint(model, best_loss, epoch, LR):
     }
     
     state_dict = model.state_dict()
+    
 
     torch.save(state, model_path)
-    torch.save(state_dict, state_dict_path)
+    torch.save(state_dict,state_dict_path)
 
 
 def train_model(
@@ -76,7 +80,6 @@ def train_model(
         optimizer,
         LR,
         global_model,
-        local_model,
         heatmap_methods,
         num_epochs,
         dataloaders,
@@ -99,6 +102,8 @@ def train_model(
         best_epoch: epoch on which best model val loss was obtained
 
     """
+    
+    
     since = time.time()
 
     start_epoch = 1
@@ -109,7 +114,8 @@ def train_model(
     method = heatmap_methods[0]
     thresh = heatmap_methods[1]
     mean = heatmap_methods[2]
-
+    
+    ext = '_t' + str(thresh) + '_m_' + str(mean)
 
     # iterate over epochs
     for epoch in range(start_epoch, num_epochs + 1):
@@ -131,31 +137,15 @@ def train_model(
             # iterate over all data in train/val dataloader:
             for data in dataloaders[phase]:
                 i += 1
-                inputs_global, labels, _ = data
-                
+                inputs, labels, _ = data
                 try:
-                    inputs_local = C.crop_batch(inputs_global,global_model,thresh,method,mean = mean).cuda()
+                    inputs = C.crop_batch(inputs,global_model,thresh,method,mean = mean)
                 except:
                     print('Cropping failed in training validation loop')
-                    
-                
-                batch_size = inputs_global.shape[0]
-                inputs_global = inputs_global.cuda()
+                batch_size = inputs.shape[0]
+                inputs = Variable(inputs.cuda())
                 labels = Variable(labels.cuda()).float()
-                
-                features = global_model.features(inputs_global)
-                global_vector = F.relu(features,inplace=True)
-                global_vector = F.avg_pool2d(global_vector,kernel_size=7,stride=1).view(features.size(0),-1)                
-                
-                features = local_model.features(inputs_local)
-                local_vector = F.relu(features)
-                local_vector = F.avg_pool2d(local_vector,kernel_size=7,stride=1).view(features.size(0),-1)
-                
-                concat = torch.cat((global_vector,local_vector),1)
-                concat = Variable(concat.cuda())
-                
-                outputs = model(concat)
-                
+                outputs = model(inputs)
 
                 # calculate gradient and update parameters in train phase
                 optimizer.zero_grad()
@@ -224,7 +214,8 @@ def train_model(
     return model, best_epoch
 
 
-def train_cnn(PATH_TO_IMAGES, LR, WEIGHT_DECAY,state_dict_global,state_dict_local, heatmap_methods, paths):
+def train_cnn(PATH_TO_IMAGES, LR, WEIGHT_DECAY,state_dict,heatmap_methods, paths):
+    
     """
     Train torchvision model to NIH data given high level hyperparameters.
 
@@ -238,15 +229,19 @@ def train_cnn(PATH_TO_IMAGES, LR, WEIGHT_DECAY,state_dict_global,state_dict_loca
         aucs: AUCs for each train,test tuple
 
     """
-    global model_path
     global state_dict_path
+    global model_path
     state_dict_path = paths[0]
     model_path = paths[1]
     
     NUM_EPOCHS = 100
     BATCH_SIZE = 16
 
-
+    try:
+        rmtree('results/')
+    except BaseException:
+        pass  # directory doesn't yet exist, no need to clear it
+    os.makedirs("results/")
 
     # use imagenet mean,std for normalization
     mean = [0.485, 0.456, 0.406]
@@ -292,37 +287,30 @@ def train_cnn(PATH_TO_IMAGES, LR, WEIGHT_DECAY,state_dict_global,state_dict_loca
         transformed_datasets['train'],
         batch_size=BATCH_SIZE,
         shuffle=True,
-        num_workers=0)
+        num_workers=8)
     dataloaders['val'] = torch.utils.data.DataLoader(
         transformed_datasets['val'],
         batch_size=BATCH_SIZE,
         shuffle=True,
-        num_workers=0)
+        num_workers=8)
 
     # please do not attempt to train without GPU as will take excessively long
     if not use_gpu:
         raise ValueError("Error, requires GPU")
-    model_cnn = models.densenet121(pretrained=True)
-    num_ftrs = model_cnn.classifier.in_features
+    model = models.densenet121(pretrained=True)
+    num_ftrs = model.classifier.in_features
     # add final layer with # outputs in same dimension of labels with sigmoid
     # activation
-    model_cnn.classifier = nn.Sequential(
+    model.classifier = nn.Sequential(
         nn.Linear(num_ftrs, N_LABELS), nn.Sigmoid())
 
     # put model on GPU
-    model_cnn = model_cnn.cuda()
+    model = model.cuda()
     
-    global_model = model_cnn
-    global_model.load_state_dict(torch.load(state_dict_global))
-    global_model.eval()
+    global_model = model
+    global_model.load_state_dict(torch.load(state_dict))    
     
-    local_model = model_cnn
-    local_model.load_state_dict(torch.load(state_dict_local))
-    local_model.eval()
-
-
-    model = nn.Sequential(nn.Linear(2048,14), nn.Sigmoid()).cuda()
-    
+    global_model.eval()   
     
     
     # define criterion, optimizer for training
@@ -337,12 +325,12 @@ def train_cnn(PATH_TO_IMAGES, LR, WEIGHT_DECAY,state_dict_global,state_dict_loca
     dataset_sizes = {x: len(transformed_datasets[x]) for x in ['train', 'val']}
 
     # train model
-    model, best_epoch = train_model(model, criterion, optimizer, LR, global_model,local_model, heatmap_methods,
+    model, best_epoch = train_model(model, criterion, optimizer, LR, global_model, heatmap_methods,
                                     num_epochs=NUM_EPOCHS,
                                     dataloaders=dataloaders, dataset_sizes=dataset_sizes, weight_decay=WEIGHT_DECAY)
 
     # get preds and AUCs on test fold
     preds, aucs = E.make_pred_multilabel(
-        data_transforms, model, global_model,local_model, PATH_TO_IMAGES, heatmap_methods, paths)
+        data_transforms, model, global_model, PATH_TO_IMAGES, heatmap_methods, paths)
 
     return preds, aucs, model

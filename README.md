@@ -1,9 +1,11 @@
 # deeplearningChexReproduce
 
-To retrain the model first run train_global.py, then train_local.py and lastly train_concat.py. Please ensure that you are running the scripts in the correct directory. Be aware that running these scripts takes a very long time. 
+To retrain the model first run train_global.py, then train_local.py and lastly train_concat.py. You can also retrain the model in the notebook. Please ensure that you are running the scripts in the correct directory. Be aware that running these scripts takes a very long time. 
 
-For retraing the full uncompressed images must be downloaded from https://nihcc.app.box.com/v/ChestXray-NIHCC and paths needs to be updated in the training, model, evaluating and dataset files in order to successfully run the code and save the states. 
+For retraing the full uncompressed images must be downloaded from https://nihcc.app.box.com/v/ChestXray-NIHCC. In the notebook you will need to put in the path to the images. It is shown where to write the path.
 
-To run on windows num_workers must be set to 0 in the dataloaders in the dataloaders.
+To run on windows num_workers must be set to 0 in the dataloaders.
 
-The model checkpoints files are 27MB, and we theeres a limit to 25MB - write to us at s136587@student.dtu.dk or s144137@student.dtu.dk and we can forward the checkpoints, producing or results for the global and local branches. The checkpoint for the fusion branch, is the one called "checkpoint_t0.5_m=False_fusion"
+The model state files are 27MB, and we there's a limit to 25MB - write to us at s136587@student.dtu.dk or s144137@student.dtu.dk and we can forward the checkpoints, producing or results for the global and local branches. 
+
+To the teachers of this course the state files are uploaded on Inside along with the report. Download the state files and put them in the same directory as the files from this github repo.

@@ -35,7 +35,7 @@ import numpy as np
 import csv
 
 import cxr_dataset as CXR
-import eval_model_local2 as E
+import eval_model_local as E
 import cropping as C
 
 
@@ -237,11 +237,7 @@ def train_cnn(PATH_TO_IMAGES, LR, WEIGHT_DECAY,state_dict,heatmap_methods, paths
     NUM_EPOCHS = 100
     BATCH_SIZE = 16
 
-    try:
-        rmtree('results/')
-    except BaseException:
-        pass  # directory doesn't yet exist, no need to clear it
-    os.makedirs("results/")
+
 
     # use imagenet mean,std for normalization
     mean = [0.485, 0.456, 0.406]

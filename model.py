@@ -201,14 +201,11 @@ def train_cnn(PATH_TO_IMAGES, LR, WEIGHT_DECAY):
         aucs: AUCs for each train,test tuple
 
     """
-    NUM_EPOCHS = 1
+    
+    NUM_EPOCHS = 100
     BATCH_SIZE = 16
 
-    try:
-        rmtree('results/')
-    except BaseException:
-        pass  # directory doesn't yet exist, no need to clear it
-    os.makedirs("results/")
+
 
     # use imagenet mean,std for normalization
     mean = [0.485, 0.456, 0.406]
